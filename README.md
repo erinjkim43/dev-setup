@@ -6,7 +6,7 @@ Automated setup scripts for macOS and Linux development environments.
 
 ```bash
 # Clone this repository
-git clone <your-repo-url>
+git clone https://github.com/erinjkim43/dev-setup
 cd dev-setup-automation
 
 # Run the main setup script
