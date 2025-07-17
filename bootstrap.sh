@@ -1,0 +1,218 @@
+#!/bin/bash
+
+set -e
+
+REPO_URL="https://github.com/erinjkim43/dots.git"
+DOTFILES_DIR="$HOME/.config/yadm"
+
+echo "🚀 Starting cross-platform dev environment setup..."
+
+detect_os() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        OS="macos"
+        PACKAGE_MANAGER="brew"
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        OS="linux"
+        if command -v apt >/dev/null 2>&1; then
+            PACKAGE_MANAGER="apt"
+            DISTRO="debian"
+        elif command -v dnf >/dev/null 2>&1; then
+            PACKAGE_MANAGER="dnf"
+            DISTRO="fedora"
+        elif command -v pacman >/dev/null 2>&1; then
+            PACKAGE_MANAGER="pacman"
+            DISTRO="arch"
+        else
+            echo "❌ Unsupported Linux distribution"
+            exit 1
+        fi
+    else
+        echo "❌ Unsupported operating system: $OSTYPE"
+        exit 1
+    fi
+    
+    echo "✅ Detected OS: $OS"
+    echo "✅ Package manager: $PACKAGE_MANAGER"
+}
+
+install_package_manager() {
+    if [[ "$OS" == "macos" ]]; then
+        if ! command -v brew >/dev/null 2>&1; then
+            echo "📦 Installing Homebrew..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        else
+            echo "✅ Homebrew already installed"
+        fi
+    fi
+}
+
+install_packages() {
+    echo "📦 Installing core packages..."
+    
+    case "$PACKAGE_MANAGER" in
+        "brew")
+            packages=(
+                "git"
+                "yadm"
+                "neovim"
+                "tmux"
+                "zsh"
+                "wezterm"
+                "node"
+                "python@3.11"
+                "rustup"
+            )
+            for package in "${packages[@]}"; do
+                echo "Installing $package..."
+                brew install "$package" || echo "⚠️ Failed to install $package"
+            done
+            ;;
+        "apt")
+            sudo apt update
+            packages=(
+                "git"
+                "yadm"
+                "neovim"
+                "tmux"
+                "zsh"
+                "curl"
+                "build-essential"
+                "python3"
+                "python3-pip"
+                "nodejs"
+                "npm"
+            )
+            for package in "${packages[@]}"; do
+                echo "Installing $package..."
+                sudo apt install -y "$package" || echo "⚠️ Failed to install $package"
+            done
+            ;;
+        "dnf")
+            packages=(
+                "git"
+                "yadm"
+                "neovim"
+                "tmux"
+                "zsh"
+                "curl"
+                "gcc"
+                "python3"
+                "python3-pip"
+                "nodejs"
+                "npm"
+            )
+            for package in "${packages[@]}"; do
+                echo "Installing $package..."
+                sudo dnf install -y "$package" || echo "⚠️ Failed to install $package"
+            done
+            ;;
+        "pacman")
+            packages=(
+                "git"
+                "yadm"
+                "neovim"
+                "tmux"
+                "zsh"
+                "curl"
+                "base-devel"
+                "python"
+                "python-pip"
+                "nodejs"
+                "npm"
+            )
+            for package in "${packages[@]}"; do
+                echo "Installing $package..."
+                sudo pacman -S --noconfirm "$package" || echo "⚠️ Failed to install $package"
+            done
+            ;;
+    esac
+}
+
+setup_ssh() {
+    echo "🔑 Setting up SSH authentication..."
+    
+    if [[ ! -f "$HOME/.ssh/id_ed25519" ]]; then
+        echo "Generating SSH key..."
+        read -p "Enter your email for SSH key: " email
+        ssh-keygen -t ed25519 -C "$email" -f "$HOME/.ssh/id_ed25519" -N ""
+        
+        echo "Starting SSH agent..."
+        eval "$(ssh-agent -s)"
+        ssh-add "$HOME/.ssh/id_ed25519"
+        
+        echo ""
+        echo "📋 Your SSH public key (copy this to GitHub):"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        cat "$HOME/.ssh/id_ed25519.pub"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        echo "📖 Go to: https://github.com/settings/ssh/new"
+        echo "1. Paste the key above"
+        echo "2. Give it a title (e.g., 'Dev Machine $(date +%Y-%m-%d)')"
+        echo "3. Click 'Add SSH key'"
+        echo ""
+        read -p "Press Enter after adding the SSH key to GitHub..."
+        
+        echo "Testing SSH connection..."
+        ssh -T git@github.com || echo "⚠️ SSH test failed, but this might be normal"
+    else
+        echo "✅ SSH key already exists"
+        ssh-add "$HOME/.ssh/id_ed25519" 2>/dev/null || true
+    fi
+}
+
+setup_dotfiles() {
+    echo "🔧 Setting up dotfiles with yadm..."
+    
+    if [[ ! -d "$DOTFILES_DIR" ]]; then
+        echo "Cloning dotfiles repository..."
+        
+        # Try SSH first, fall back to HTTPS
+        SSH_REPO_URL="git@github.com:erinjkim43/dots.git"
+        if ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+            echo "Using SSH to clone repository..."
+            yadm clone "$SSH_REPO_URL"
+        else
+            echo "SSH not configured, using HTTPS..."
+            yadm clone "$REPO_URL"
+        fi
+    else
+        echo "✅ Dotfiles already cloned"
+        yadm pull
+    fi
+    
+    echo "Applying dotfile configurations..."
+    yadm status
+}
+
+configure_shell() {
+    echo "🐚 Configuring shell..."
+    
+    if [[ "$SHELL" != *"zsh"* ]]; then
+        echo "Setting zsh as default shell..."
+        if [[ "$OS" == "macos" ]]; then
+            chsh -s /bin/zsh
+        else
+            chsh -s "$(which zsh)"
+        fi
+    else
+        echo "✅ zsh already set as default shell"
+    fi
+}
+
+main() {
+    detect_os
+    install_package_manager
+    install_packages
+    setup_ssh
+    setup_dotfiles
+    configure_shell
+    
+    echo ""
+    echo "🎉 Dev environment setup complete!"
+    echo "📝 Please restart your terminal or run 'source ~/.zshrc'"
+    echo "🔧 Your dotfiles are managed by yadm - use 'yadm status' to check"
+    echo "🔑 SSH key configured for GitHub push access"
+}
+
+main "$@"
