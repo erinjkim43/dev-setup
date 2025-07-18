@@ -185,6 +185,50 @@ setup_ssh() {
     fi
 }
 
+install_nerd_fonts() {
+    echo "🔤 Installing Nerd Fonts..."
+    
+    if [[ "$OS" == "macos" ]]; then
+        if ! brew list --cask font-meslo-lg-nerd-font >/dev/null 2>&1; then
+            echo "Installing Meslo Nerd Font via Homebrew..."
+            brew tap homebrew/cask-fonts
+            brew install --cask font-meslo-lg-nerd-font
+        else
+            echo "✅ Meslo Nerd Font already installed"
+        fi
+    else
+        # Linux - download and install manually
+        FONTS_DIR="$HOME/.local/share/fonts"
+        mkdir -p "$FONTS_DIR"
+        
+        if [[ ! -f "$FONTS_DIR/MesloLGS NF Regular.ttf" ]]; then
+            echo "Downloading Meslo Nerd Fonts..."
+            cd "$FONTS_DIR"
+            curl -fLo "MesloLGS NF Regular.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
+            curl -fLo "MesloLGS NF Bold.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
+            curl -fLo "MesloLGS NF Italic.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
+            curl -fLo "MesloLGS NF Bold Italic.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
+            fc-cache -fv
+            echo "✅ Meslo Nerd Fonts installed"
+        else
+            echo "✅ Meslo Nerd Fonts already installed"
+        fi
+    fi
+}
+
+setup_tpm() {
+    echo "🔧 Setting up TPM (Tmux Plugin Manager)..."
+    
+    TPM_DIR="$HOME/.tmux/plugins/tpm"
+    if [[ ! -d "$TPM_DIR" ]]; then
+        echo "Installing TPM..."
+        git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
+        echo "✅ TPM installed - plugins will be installed when tmux starts"
+    else
+        echo "✅ TPM already installed"
+    fi
+}
+
 setup_dotfiles() {
     echo "🔧 Setting up dotfiles with yadm..."
     
@@ -230,6 +274,8 @@ main() {
     install_package_manager
     install_packages
     setup_ssh
+    install_nerd_fonts
+    setup_tpm
     setup_dotfiles
     configure_shell
     
@@ -238,6 +284,9 @@ main() {
     echo "📝 Please restart your terminal or run 'source ~/.zshrc'"
     echo "🔧 Your dotfiles are managed by yadm - use 'yadm status' to check"
     echo "🔑 SSH key configured for GitHub push access"
+    echo "🔤 Nerd Font installed - configure your terminal to use it"
+    echo "🔧 TPM installed - tmux plugins will be available"
+    echo "🎨 Shell configuration managed by your dotfiles"
 }
 
 main "$@"
