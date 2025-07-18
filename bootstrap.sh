@@ -105,6 +105,7 @@ install_packages() {
                 "python3-pip"
                 "nodejs"
                 "npm"
+                "fontconfig"
             )
             for package in "${packages[@]}"; do
                 echo "Installing $package..."
@@ -124,6 +125,7 @@ install_packages() {
                 "python3-pip"
                 "nodejs"
                 "npm"
+                "fontconfig"
             )
             for package in "${packages[@]}"; do
                 echo "Installing $package..."
@@ -143,6 +145,7 @@ install_packages() {
                 "python-pip"
                 "nodejs"
                 "npm"
+                "fontconfig"
             )
             for package in "${packages[@]}"; do
                 echo "Installing $package..."
