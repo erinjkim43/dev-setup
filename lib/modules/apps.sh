@@ -8,7 +8,7 @@ install_docker() {
     print_step "Installing Docker..."
     case "$PACKAGE_MANAGER" in
         "brew")
-            brew install --cask docker || print_warn "Failed to install Docker"
+            brew install --cask docker || { print_warn "Failed to install Docker"; return 1; }
             ;;
         "apt")
             curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
@@ -29,7 +29,7 @@ install_nerd_fonts() {
             print_installed "Meslo Nerd Font"
             return 0
         fi
-        brew install --cask font-meslo-lg-nerd-font || print_warn "Failed to install Meslo Nerd Font"
+        brew install --cask font-meslo-lg-nerd-font || { print_warn "Failed to install Meslo Nerd Font"; return 1; }
     else
         local fonts_dir="$HOME/.local/share/fonts"
         if [[ -f "$fonts_dir/MesloLGS NF Regular.ttf" ]]; then

@@ -66,17 +66,6 @@ pkg_install() {
     print_success "$name installed"
 }
 
-# Install a brew cask (macOS only)
-cask_install() {
-    local name="$1"
-    if [[ "$PACKAGE_MANAGER" != "brew" ]]; then
-        print_warn "$name cask install is macOS only"
-        return 1
-    fi
-    brew install --cask "$name" || { print_warn "Failed to install $name"; return 1; }
-    print_success "$name installed"
-}
-
 # Prompt user for comma-separated selections from a numbered list
 # Usage: prompt_selection "header" item1 item2 item3...
 # Returns selected indices (0-based) in SELECTED_INDICES array

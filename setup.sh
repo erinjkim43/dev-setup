@@ -29,6 +29,12 @@ usage() {
 }
 
 main() {
+    # Handle help early before system detection
+    if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        usage
+        exit 0
+    fi
+
     check_root
     detect_os
     install_package_manager
@@ -48,7 +54,6 @@ main() {
             --cli)    install_all_cli_tools ;;
             --apps)   install_all_apps ;;
             --config) install_all_config ;;
-            -h|--help) usage; exit 0 ;;
             *)
                 print_error "Unknown option: $1"
                 usage
